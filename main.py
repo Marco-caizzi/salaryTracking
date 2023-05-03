@@ -13,6 +13,7 @@ from salaryTracker import SalaryTracker
 class RecibosMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.delete_button = None
         self.calcular_button = None
         self.file_list = None
         self.load_button = None
@@ -25,6 +26,7 @@ class RecibosMainWindow(QMainWindow):
         central_widget = QWidget()
         main_layout = QVBoxLayout()
         self.file_list = QListWidget()
+        self.file_list.doubleClicked.connect(self.open_selected_file)
         main_layout.addWidget(self.file_list)
 
         button_layout = QHBoxLayout()
@@ -40,10 +42,52 @@ class RecibosMainWindow(QMainWindow):
         self.calcular_button.clicked.connect(self.process_files)
         button_layout.addWidget(self.calcular_button)
 
+        self.delete_button = QPushButton("Eliminar archivo")
+        self.delete_button.clicked.connect(self.delete_selected_file)
+        button_layout.addWidget(self.delete_button)
+
         main_layout.addLayout(button_layout)
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
         self.update_list()
+
+    def open_selected_file(self):
+        item = self.file_list.currentItem()
+        if item is not None:
+            item = item.text()
+            file_path = os.path.join("recibos", item)
+            os.startfile(file_path)
+
+    def delete_selected_file(self):
+        selected_items = self.file_list.selectedItems()
+        if not selected_items:
+            return
+
+        message_box = QMessageBox()
+        message_box.setWindowTitle("Eliminar archivo")
+        message_box.setIcon(QMessageBox.Question)
+        message_box.setText("¿Está seguro que desea eliminar el archivo seleccionado?")
+        message_box.setInformativeText(
+            f"Se eliminará el/los archivo(s) seleccionado(s):\n\n{', '.join(item.text() for item in selected_items)}")
+        message_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        message_box.setDefaultButton(QMessageBox.Ok)
+
+        if message_box.exec() == QMessageBox.Ok:
+            for item in selected_items:
+                file_path = os.path.join("recibos", item.text())
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                else:
+                    QMessageBox.warning(self, 'Error', f'El archivo {file_path} no existe')
+            self.update_list()
+
+    def delete_file(self, file_path):
+        try:
+            os.remove(file_path)
+        except FileNotFoundError as e:
+            QMessageBox.warning(self, 'Error', f'El archivo {file_path} no existe')
+        except OSError as e:
+            QMessageBox.warning(self, 'Error', f'Error al eliminar el archivo {file_path}: {str(e)}')
 
     def load_file(self):
         filename, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo", "", "PDF files (*.pdf)")
