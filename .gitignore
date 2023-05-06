@@ -161,5 +161,4 @@ cython_debug/
 /test.py
 recibos/*.pdf
 salary_tracking.db
-
-/database.db
+/db/database.db

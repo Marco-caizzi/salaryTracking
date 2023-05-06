@@ -2,7 +2,7 @@ import sqlite3
 
 
 class SalaryTracker:
-    def __init__(self, db_path):
+    def __init__(self, db_path=None):
         self.db_path = db_path
         self.conn = None
         self.cursor = None
@@ -74,6 +74,7 @@ class SalaryTracker:
                  receipt_data[5])
             )
         self.conn.commit()
+        self.close_db_connection()
 
     def is_month_year_loaded(self, month: str, year: str) -> bool:
         self.cursor.execute(
@@ -84,3 +85,49 @@ class SalaryTracker:
         )
         result = self.cursor.fetchone()[0]
         return bool(result)
+
+    def get_salary_data(self):
+        self.connect_to_db()
+        # Obtener los datos
+        self.cursor.execute(
+            "SELECT month, haberes_con_aporte FROM salary s,months_years_loaded myl "
+            "WHERE s.id_month_year= myl.id"
+            " AND codigo = 100 "
+            " AND year = 2023"
+            " AND descripcion_del_concepto= 'SUELDO'")
+        lista = self.cursor.fetchall()
+
+        # Procesar los datos
+        lista = self.process_data(lista)
+
+        # Cerrar la conexión a la base de datos
+        self.close_db_connection()
+
+        return lista
+
+    @staticmethod
+    def process_data(lista):
+        # Convertir los meses a su representación numérica correspondiente
+        month_num = {"ENERO": "01", "FEBRERO": "02", "MARZO": "03", "ABRIL": "04", "MAYO": "05", "JUNIO": "06",
+                     "JULIO": "07", "AGOSTO": "08", "SEPTIEMBRE": "09", "OCTUBRE": "10", "NOVIEMBRE": "11",
+                     "DICIEMBRE": "12"}
+        data = [(month_num[month], salary) for month, salary in lista]
+
+        # Ordenar los datos en función del mes numérico
+        data = sorted(data, key=lambda x: x[0])
+
+        # Convertir los meses numéricos a su representación textual correspondiente
+        month_name = {v: k for k, v in month_num.items()}
+        data = [(month_name[month], salary) for month, salary in data]
+
+        return data
+
+    def get_month_year(self, month_year_id):
+        self.cursor.execute(
+            """
+            SELECT month, year FROM months_years_loaded WHERE id = ?;
+            """,
+            (month_year_id,)
+        )
+        month, year = self.cursor.fetchone()
+        return month, year
