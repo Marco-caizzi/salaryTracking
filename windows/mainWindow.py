@@ -1,20 +1,20 @@
 import os
 import shutil
 import sys
-import re
-import camelot
-import tabula as tabula
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, \
     QApplication, QMessageBox, QComboBox
-
 from windows.evolutionByPercentageOfSalaryGraphWindow import EvolutionByPercentageOfSalaryGraphWindow
 from windows.impGananciasGraphWindow import ImpGananciasGraphWindow
+from windows.processFilesWindow import FileProcessingWindow
 from windows.salaryEvolutionGraphWindow import SalaryEvolutionGraphWindow
-from db.salaryTracker import SalaryTracker
 
 
-class RecibosMainWindow(QMainWindow):
+# Clase que contiene la ventana principal de la aplicación, la cual permite cargar archivos, procesarlos y mostrar los
+# resultados en una tabla y en gráficos. Además, permite eliminar archivos y actualizar la lista de archivos. También
+# permite mostrar las estadísticas de los archivos procesados.
+class MainWindow(QMainWindow):
     def __init__(self):
+        # Inicializar la ventana principal de la aplicación y sus atributos principales
         super().__init__()
         self.window_imp_ganancias = None
         self.statistics_combo = None
@@ -27,6 +27,7 @@ class RecibosMainWindow(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
+        # Inicializar la interfaz gráfica de la ventana principal de la aplicación y sus atributos principales
         self.setWindowTitle("Recibos de sueldo")
         self.resize(500, 400)
         central_widget = QWidget()
@@ -48,7 +49,7 @@ class RecibosMainWindow(QMainWindow):
         button_layout.addSpacing(20)
 
         self.calcular_button = QPushButton("Procesar archivos")
-        self.calcular_button.clicked.connect(self.process_files)
+        self.calcular_button.clicked.connect(self.show_PDF_processor_window)
         button_layout.addWidget(self.calcular_button)
         button_layout.addSpacing(20)
 
@@ -71,7 +72,7 @@ class RecibosMainWindow(QMainWindow):
         self.update_list()
 
     def show_selected_statistics(self, index):
-        """Muestra la ventana de estadísticas seleccionada"""
+        # Mostrar las estadísticas seleccionadas en el combo box
         if index == 0:
             self.show_evolution_of_salary()
         elif index == 1:
@@ -80,25 +81,35 @@ class RecibosMainWindow(QMainWindow):
             self.show_imp_ganancias()
 
     def show_evolution_of_salary(self):
+        # Mostrar la evolución del sueldo en un gráfico
         self.window_metrics = SalaryEvolutionGraphWindow()
         self.window_metrics.show()
 
     def show_evolution_by_percentage_of_salary(self):
+        # Mostrar la evolución del sueldo en porcentaje en un gráfico
         self.window_metrics = EvolutionByPercentageOfSalaryGraphWindow()
         self.window_metrics.show()
 
     def show_imp_ganancias(self):
+        # Mostrar el impuesto a las ganancias en un gráfico
         self.window_imp_ganancias = ImpGananciasGraphWindow()
         self.window_imp_ganancias.show()
 
+    def show_PDF_processor_window(self):
+        # Mostrar la ventana de procesamiento de archivos
+        self.window_metrics = FileProcessingWindow()
+        self.window_metrics.show()
+
     def open_selected_file(self):
+        # Abrir el archivo seleccionado en la lista de archivos de recibos de sueldo
         item = self.file_list.currentItem()
         if item is not None:
             item = item.text()
-            file_path = os.path.join("../recibos", item)
+            file_path = os.path.join("../payStubs", item)
             os.startfile(file_path)
 
     def delete_selected_file(self):
+        # Eliminar el archivo seleccionado en la lista de archivos de recibos de sueldo
         selected_items = self.file_list.selectedItems()
         if not selected_items:
             return
@@ -114,91 +125,36 @@ class RecibosMainWindow(QMainWindow):
 
         if message_box.exec() == QMessageBox.Ok:
             for item in selected_items:
-                file_path = os.path.join("../recibos", item.text())
+                file_path = os.path.join("../payStubs", item.text())
                 if os.path.exists(file_path):
                     os.remove(file_path)
                 else:
                     QMessageBox.warning(self, 'Error', f'El archivo {file_path} no existe')
             self.update_list()
 
-    def delete_file(self, file_path):
-        try:
-            os.remove(file_path)
-        except FileNotFoundError as e:
-            QMessageBox.warning(self, 'Error', f'El archivo {file_path} no existe')
-        except OSError as e:
-            QMessageBox.warning(self, 'Error', f'Error al eliminar el archivo {file_path}: {str(e)}')
-
     def load_file(self):
+        # Cargar un archivo de recibo de sueldo
         filename, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo", "", "PDF files (*.pdf)")
         if filename:
-            # Verificar si el archivo ya existe en la carpeta de recibos
-            if os.path.exists(os.path.join(os.getcwd(), "../recibos", os.path.basename(filename))):
+            # Verificar si el archivo ya existe en la carpeta de payStubs
+            if os.path.exists(os.path.join(os.getcwd(), "../payStubs", os.path.basename(filename))):
                 QMessageBox.critical(self, "Error", "El archivo ya ha sido cargado previamente")
             else:
-                destination = os.path.join(os.getcwd(), "../recibos", os.path.basename(filename))
+                destination = os.path.join(os.getcwd(), "../payStubs", os.path.basename(filename))
                 shutil.copy(filename, destination)
                 print("Archivo guardado en:", destination)
             self.update_list()
 
     def update_list(self):
+        # Actualizar la lista de archivos de recibos de sueldo
         self.file_list.clear()
-        for file_name in os.listdir(os.path.join(os.getcwd(), "../recibos")):
+        for file_name in os.listdir(os.path.join(os.getcwd(), "../payStubs")):
             if file_name.endswith(".pdf"):
                 self.file_list.addItem(file_name)
-
-    @staticmethod
-    def process_files():
-        recibos_path = os.path.join(os.getcwd(), "../recibos")
-        recibos = os.listdir(recibos_path)
-        for recibo in recibos:
-            if recibo.endswith(".pdf"):
-                pdf_path = os.path.join(recibos_path, recibo)
-                df = tabula.read_pdf(pdf_path, pages='all', multiple_tables=True, stream=True)
-                data = df[0].values.tolist()[1:]
-                liquidation = str(pdf_path.split("\\")[-1].split(".")[0])
-                if type(data[6][4]) == str:
-                    cuil = data[6][4].replace(" ", "")
-                elif type(data[6][5]) == str:
-                    cuil = data[6][5].replace(" ", "")
-                else:
-                    return "Error"
-                surname_first_name = data[5][0].split(" ")[4] + " " + data[5][0].split(" ")[5] + data[5][0].split(" ")[
-                    6]
-                print(f"Liquidation: {liquidation},CUIL: {cuil}, Apellido y Nombre: {surname_first_name}")
-                tables = camelot.read_pdf(pdf_path, flavor='stream', table_areas=['34,536,564,202'], strip_text=' ')
-                table_data = tables[0].data
-                print(table_data)
-                print(tables[0].df)
-                new_table_2 = []
-                for i in table_data:
-                    new_table = []
-                    for j in i:
-                        if re.match(r'^[\d,.-]+$', j):
-                            j = j.strip()
-                            if j.startswith('-'):
-                                j = j.replace(',', '')
-                                j = -float(j[1:])
-                            elif ',' in j:
-                                j = j.replace(',', '')
-                                j = float(j)
-                            else:
-                                j = float(j)
-                            if j.is_integer():
-                                j = int(j)
-                            new_table.append(j)
-                        else:
-                            new_table.append(j)
-                    new_table_2.append(new_table)
-                print(new_table_2)
-                db = SalaryTracker("../db/database.db")
-                db.storing_receipt_data(datos_pdf=new_table_2, month=recibo.split("_")[0],
-                                        year=recibo.split("_")[1].split(".")[0])
-        print("Procesamiento finalizado.")
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = RecibosMainWindow()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec_())

@@ -1,6 +1,5 @@
 import pyqtgraph as pg
 from PyQt5.QtWidgets import QMainWindow
-import numpy as np
 from db.salaryTracker import SalaryTracker
 
 
@@ -29,5 +28,5 @@ class ImpGananciasGraphWindow(QMainWindow):
         self.graph_widget.setLabel('bottom', 'Mes', units='')
         self.graph_widget.setLabel('left', '% de aumento', units='')
 
-        #Mostrar la ventana
+        # Mostrar la ventana
         self.show()
