@@ -2,26 +2,47 @@ import os
 import re
 import camelot
 import tabula
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QMainWindow, QTreeView
 from db.salaryTracker import SalaryTracker
 
 
-# Clase que contiene la ventana que permite procesar los archivos PDF y mostrar los resultados en una tabla
+# Clase que contiene la ventana en la cual se procesan los archivos PDF y se muestran los resultados en una tabla.
+# Cada archivo PDF se procesa y se muestra en una fila de la tabla. En la ventana se muestra una tabla por cada archivo
+# PDF y por cada archivo se genera un título que contiene: Liquidación, CUIL y Apellido y Nombre. Por ejemplo:
+# Liquidación: ENERO_2023, CUIL: 20-12345678-9, Apellido y Nombre: Pérez Juan
+# Luego del título se muestra una tabla con los datos del archivo PDF. Por ejemplo:
+# CODIGO            CONCEPTO  CANTIDAD  HABERES  DESCUENTOS  NETO A PAGAR
+# 100                 SUELDO    0.00   100,382.34      0.00       0.00
+# 211   PAGODIASDEVACACIONES   21.00   100,014.24      0.00       0.00
+# 241  DESC.DIASDEVACACIONES  -21.00  -100,967.64      0.00       0.00
+# 530      GASTOSTELETRABAJO    0.00         0.00  1,800.00       0.00
+# 801       JUBILACION11.00%    0.00         0.00      0.00  5,677.18
+# 802   INSSJP-LEY190323.00%    0.00         0.00      0.00  5,002.87
+# 804        OBRASOCIAL3.00%    0.00         0.00      0.00  5,002.87
+# 920  IMPUESTOALASGANANCIAS    0.00         0.00      0.00  5,057.77
+# 999               REDONDEO    0.00         0.00      0.00      -0.75
 class FileProcessingWindow(QMainWindow):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("PDF Processor")
+    def __init__(self):
+        # Inicializar la ventana principal de la aplicación y sus atributos principales
+        super().__init__()
+        self.model = None
+        self.treeView = None
+        self.init_ui()
 
-        # create a table to display the output
-        self.table = QTreeView(self)
-        self.setCentralWidget(self.table)
-        # Crear el modelo de la vista
+    def init_ui(self):
+        # Inicializar la interfaz gráfica de la ventana principal de la aplicación y sus atributos principales
+        self.setWindowTitle("Procesar archivos PDF")
+        self.resize(800, 600)
         self.model = QStandardItemModel()
-        self.model.setHorizontalHeaderLabels(["File", "Liquidation", "CUIL", "Apellido y Nombre", "Data"])
-        self.table.setModel(self.model)
-
-        # process the PDF files and display the output in the table
+        self.model.setHorizontalHeaderLabels(['Liquidación', 'CUIL', 'Apellido y Nombre'])  # Titulos de las columnas
+        self.treeView = QTreeView()
+        self.treeView.setModel(self.model)
+        self.treeView.setRootIsDecorated(False)
+        self.treeView.setAlternatingRowColors(True)
+        self.treeView.setSortingEnabled(True)
+        self.setCentralWidget(self.treeView)
         self.process_files()
 
     def process_files(self):
@@ -65,16 +86,18 @@ class FileProcessingWindow(QMainWindow):
                         else:
                             new_table.append(j)
                     new_table_2.append(new_table)
+
                 db = SalaryTracker("../db/database.db")
                 db.storing_receipt_data(datos_pdf=new_table_2, month=_.split("_")[0],
                                         year=_.split("_")[1].split(".")[0])
-                # insert the processed data into the table
-                item = QStandardItem(_)
-                item.appendRow([QStandardItem(liquidation), QStandardItem(cuil), QStandardItem(surname_first_name),
-                                QStandardItem(str(table_data))])
-                self.model.appendRow(item)
-
-            # Ajustar el tamaño de la columna para que los contenidos se muestren correctamente
-            self.table.resizeColumnToContents(0)
-
+                self.add_pdf_to_table(liquidation, cuil, surname_first_name)
         print("Procesamiento finalizado.")
+
+    def add_pdf_to_table(self, liquidation, cuil, surname_first_name):
+        self.model.appendRow(
+            [QStandardItem(liquidation), QStandardItem(cuil), QStandardItem(surname_first_name)])
+        self.treeView.expandAll()
+        self.treeView.resizeColumnToContents(0)
+        self.treeView.resizeColumnToContents(1)
+        self.treeView.resizeColumnToContents(2)
+        self.treeView.sortByColumn(0, Qt.AscendingOrder)
