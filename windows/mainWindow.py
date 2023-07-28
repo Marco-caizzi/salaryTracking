@@ -1,7 +1,7 @@
 import os
 import shutil
 import sys
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, \
+from PyQt6.QtWidgets import QMainWindow, QFileDialog, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QListWidget, \
     QApplication, QMessageBox, QComboBox
 from windows.evolutionByPercentageOfSalaryGraphWindow import EvolutionByPercentageOfSalaryGraphWindow
 from windows.impGananciasGraphWindow import ImpGananciasGraphWindow
@@ -114,16 +114,16 @@ class MainWindow(QMainWindow):
         if not selected_items:
             return
 
-        message_box = QMessageBox()
+        message_box = QMessageBox(self)
         message_box.setWindowTitle("Eliminar archivo")
-        message_box.setIcon(QMessageBox.Question)
+        message_box.setIcon(QMessageBox.Icon.Question)
         message_box.setText("¿Está seguro que desea eliminar el archivo seleccionado?")
         message_box.setInformativeText(
             f"Se eliminará el/los archivo(s) seleccionado(s):\n\n{', '.join(item.text() for item in selected_items)}")
-        message_box.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        message_box.setDefaultButton(QMessageBox.Ok)
+        message_box.setStandardButtons(QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+        message_box.setDefaultButton(QMessageBox.StandardButton.Ok)
 
-        if message_box.exec() == QMessageBox.Ok:
+        if message_box.exec() == QMessageBox.StandardButton.Ok:
             for item in selected_items:
                 file_path = os.path.join("../payStubs", item.text())
                 if os.path.exists(file_path):
@@ -157,4 +157,4 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

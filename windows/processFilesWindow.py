@@ -2,9 +2,9 @@ import os
 import re
 import camelot
 import tabula
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QMainWindow, QTreeView
+from PyQt6.QtCore import Qt, QSortFilterProxyModel
+from PyQt6.QtGui import QStandardItemModel, QStandardItem
+from PyQt6.QtWidgets import QMainWindow, QTreeView
 from db.salaryTracker import SalaryTracker
 
 
@@ -100,4 +100,5 @@ class FileProcessingWindow(QMainWindow):
         self.treeView.resizeColumnToContents(0)
         self.treeView.resizeColumnToContents(1)
         self.treeView.resizeColumnToContents(2)
-        self.treeView.sortByColumn(0, Qt.AscendingOrder)
+        self.treeView.sortByColumn(0, Qt.SortOrder.AscendingOrder)
+
