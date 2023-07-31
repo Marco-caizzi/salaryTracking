@@ -1,7 +1,6 @@
 import pyqtgraph as pg
-from PyQt6.QtWidgets import QMainWindow
 import numpy as np
-
+from PyQt6.QtWidgets import QMainWindow
 from db.salaryTracker import SalaryTracker
 
 

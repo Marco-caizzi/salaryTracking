@@ -57,6 +57,7 @@ class MainWindow(QMainWindow):
         self.statistics_combo.addItem("Evolución del sueldo")
         self.statistics_combo.addItem("Evolución del sueldo en porcentaje")
         self.statistics_combo.addItem("Imp.Ganancias X mes")
+        self.statistics_combo.addItem("Generar EXCEL")
         self.statistics_combo.activated.connect(self.show_selected_statistics)
         button_layout.addWidget(self.statistics_combo)
         button_layout.addSpacing(20)
@@ -79,6 +80,8 @@ class MainWindow(QMainWindow):
             self.show_evolution_by_percentage_of_salary()
         elif index == 2:
             self.show_imp_ganancias()
+        elif index == 3:
+            self.createExcelFile()
 
     def show_evolution_of_salary(self):
         # Mostrar la evolución del sueldo en un gráfico

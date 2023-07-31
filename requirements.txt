@@ -4,3 +4,7 @@ camelot-py[cv]==0.11.0
 pandas==2.0.3
 numpy==1.25.1
 pyqtgraph~=0.13.3
+openpyxl~=3.1.2
+requests~=2.31.0
+urllib3~=2.0.4
+beautifulsoup4~=4.12.2
